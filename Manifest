@@ -223,6 +223,7 @@ lib/memcached/behaviors.rb
 lib/memcached/exceptions.rb
 lib/memcached/experimental.rb
 lib/memcached/memcached.rb
+lib/memcached/mirror.rb
 lib/memcached/rails.rb
 test/profile/benchmark.rb
 test/profile/c_profiler.rb
@@ -235,4 +236,5 @@ test/test_helper.rb
 test/unit/binding_test.rb
 test/unit/memcached_experimental_test.rb
 test/unit/memcached_test.rb
+test/unit/mirroring_test.rb
 test/unit/rails_test.rb
