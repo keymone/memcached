@@ -6,7 +6,7 @@ class Memcached::Mirror
       alias :get_without_mirroring :get
 
       def get(keys, marshal=true)
-        result1 = get_without_keys(keys, marshal=true)
+        result1 = get_without_mirroring(keys, marshal=true)
 
         if rand <= rate
           result2 = to.get(keys, marshal)

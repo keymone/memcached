@@ -103,6 +103,8 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
   def initialize(servers = nil, opts = {})
     @struct = Lib.memcached_create(nil)
 
+    @mirrors = []
+
     # Merge option defaults and discard meaningless keys
     @options = DEFAULTS.merge(opts)
     @options.delete_if { |k,v| not DEFAULTS.keys.include? k }
@@ -170,13 +172,19 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
   # FIXME Does not necessarily free any existing server structs.
   def set_servers(servers)
     Array(servers).each_with_index do |server, index|
-      # Socket
+      raise ArgumentError, "Servers must be either in the format 'host:port[:weight]' (e.g., 'localhost:11211' or  'localhost:11211:10') for a network server, or a valid path to a Unix domain socket (e.g., /var/run/memcached)." unless
+        server.is_a?(String)
+      
+      server, mirror, rate = server.split("|")
+      rate = rate.to_i
+
       check_return_code(
-        if server.is_a?(String) and File.socket?(server)
+        # Socket
+        if File.socket?(server)
           args = [@struct, server, options[:default_weight].to_i]
           Lib.memcached_server_add_unix_socket_with_weight(*args)
         # Network
-        elsif server.is_a?(String) and server =~ /^[\w\d\.-]+(:\d{1,5}){0,2}$/
+        elsif server =~ /^[\w\d\.-]+(:\d{1,5}){0,2}$/
           host, port, weight = server.split(":")
           args = [@struct, host, port.to_i, (weight || options[:default_weight]).to_i]
           if options[:use_udp]

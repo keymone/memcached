@@ -98,6 +98,14 @@ Currently #append, #prepend, #set, and #delete are pipelined. Note that when you
   # Join the thread so that exceptions don't get lost
   thread.join
 
+== Mirroring
+
+You can specify a mirror server for every instance with rate of data migration.
+
+  cache = Memcached.new("localhost:11211|localhost:11233|50")
+
+Such configuration will ensure on 50% of requests to check if data on localhost:11233 matches data on localhost:11211 and set correct value on former in case of non-match. If key was not found on source it will not be deleted from destination however.
+
 == Legacy applications
 
 There is a compatibility wrapper for legacy applications called Memcached::Rails.
