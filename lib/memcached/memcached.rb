@@ -176,13 +176,14 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
         server.is_a?(String)
       
       server, mirror, rate = server.split("|")
-      rate = rate.to_i
 
       check_return_code(
         # Socket
         if File.socket?(server)
           args = [@struct, server, options[:default_weight].to_i]
           Lib.memcached_server_add_unix_socket_with_weight(*args)
+          
+          setup_mirror(args.slice(1,3).join(":"), mirror, rate) if mirror
         # Network
         elsif server =~ /^[\w\d\.-]+(:\d{1,5}){0,2}$/
           host, port, weight = server.split(":")
@@ -192,6 +193,8 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
           else
             Lib.memcached_server_add_with_weight(*args)
           end
+
+          setup_mirror(args.slice(1,3).join(":"), mirror, rate) if mirror
         else
           raise ArgumentError, "Servers must be either in the format 'host:port[:weight]' (e.g., 'localhost:11211' or  'localhost:11211:10') for a network server, or a valid path to a Unix domain socket (e.g., /var/run/memcached)."
         end
@@ -663,5 +666,26 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
       strings << ":#{server.weight}" if options[:ketama_weighted]
     end
     strings.join
+  end
+
+  ### Mirroring methods
+  public
+
+  def setup_mirror(server, mirror, rate=100)
+    rate = rate.to_i unless rate.is_a?(Fixnum)
+    @mirrors[server] = Memcached.new(mirror)
+    Memcached::Mirror.setup(self, rate)
+  end
+
+  def mirrored?
+    !!@mirrored
+  end
+
+  def mirrored!
+    @mirrored = true
+  end
+
+  def mirror_by_key(key)
+    @mirrors[self.server_by_key(key)]
   end
 end
