@@ -103,7 +103,7 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
   def initialize(servers = nil, opts = {})
     @struct = Lib.memcached_create(nil)
 
-    @mirrors = []
+    @mirrors = {}
 
     # Merge option defaults and discard meaningless keys
     @options = DEFAULTS.merge(opts)
@@ -673,10 +673,13 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
   ### Mirroring methods
   public
 
+  attr_accessor :mirroring_rate
+
   def setup_mirror(server, mirror, rate=100)
     rate = rate.to_i unless rate.is_a?(Fixnum)
+    self.mirroring_rate = rate / 100.0
     @mirrors[server] = Memcached.new(mirror)
-    Memcached::Mirror.setup(self, rate)
+    Memcached::Mirror.setup(self)
   end
 
   def mirrored?

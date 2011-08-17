@@ -1,8 +1,6 @@
 class Memcached::Mirror
-  def self.setup(from, rate = 100)
+  def self.setup(from)
     return if from.mirrored?
-
-    rate = rate / 100.0
 
     from.instance_eval do
       alias :get_without_mirroring :get
@@ -10,18 +8,20 @@ class Memcached::Mirror
       def get(keys, marshal=true)
         result = get_without_mirroring(keys, marshal=true)
 
-        if rand <= rate
+        if Kernel.rand <= mirroring_rate
           splat = keys.is_a?(Array) ? result : {keys => result}
           keys  = [*keys]
           
           keys.each do |k|
             next if splat[k].nil?
 
-            mirror = from.mirror_by_key(k)
+            mirror = mirror_by_key(k)
             next unless mirror
             
-            value_on_mirror = mirror.get(k)
-            mirror.set(k, splat[k]) unless splat[k] == value_on_mirror
+            value_on_mirror = mirror.get(k) rescue nil
+            next if splat[k] == value_on_mirror
+            
+            mirror.set(k, splat[k])
           end
         end
 
