@@ -181,20 +181,22 @@ Please note that when <tt>:no_block => true</tt>, update methods do not raise on
         # Socket
         if File.socket?(server)
           args = [@struct, server, options[:default_weight].to_i]
-          Lib.memcached_server_add_unix_socket_with_weight(*args)
+          ret_code = Lib.memcached_server_add_unix_socket_with_weight(*args)
           
           setup_mirror(args.slice(1,3).join(":"), mirror, rate) if mirror
+          ret_code
         # Network
         elsif server =~ /^[\w\d\.-]+(:\d{1,5}){0,2}$/
           host, port, weight = server.split(":")
           args = [@struct, host, port.to_i, (weight || options[:default_weight]).to_i]
-          if options[:use_udp]
+          ret_code = if options[:use_udp]
             Lib.memcached_server_add_udp_with_weight(*args)
           else
             Lib.memcached_server_add_with_weight(*args)
           end
 
           setup_mirror(args.slice(1,3).join(":"), mirror, rate) if mirror
+          ret_code
         else
           raise ArgumentError, "Servers must be either in the format 'host:port[:weight]' (e.g., 'localhost:11211' or  'localhost:11211:10') for a network server, or a valid path to a Unix domain socket (e.g., /var/run/memcached)."
         end
