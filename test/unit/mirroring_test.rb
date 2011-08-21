@@ -41,4 +41,28 @@ class MirroringTest < Test::Unit::TestCase
       puts @mirror.get("fail")
     end
   end
+
+  def test_mirroring_should_preserve_realiasing_of_commands
+    Memcached.class_eval do
+      def get_with_hello(*args, &block)
+        get_without_hello(*args, &block)
+        "hello"
+      rescue
+        "hello"
+      end
+
+      alias :get_without_hello :get
+      alias :get :get_with_hello
+    end
+    
+    cache = Memcached.new('localhost:43042')
+    assert_equal 'hello', cache.get('w/e')
+
+    cache = Memcached.new('localhost:43042|localhost:43043')
+    assert_equal 'hello', cache.get('w/e')
+
+    Memcached.class_eval do
+      alias :get :get_without_hello
+    end
+  end
 end
