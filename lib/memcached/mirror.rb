@@ -7,7 +7,7 @@ module Memcached::Mirror
 
   module InstanceMethods
     def get(keys, marshal=true)
-      result = super(keys, marshal=true)
+      result = super
 
       if Kernel.rand <= mirroring_rate
         splat = keys.is_a?(Array) ? result : {keys => result}
